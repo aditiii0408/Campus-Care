@@ -69,14 +69,20 @@ or call iCall helpline at 9152987821. Always provide this number for crisis situ
       let data = "";
       apiRes.on("data", (chunk) => (data += chunk));
       apiRes.on("end", () => {
-        try {
-          const parsed = JSON.parse(data);
-          const reply = parsed.content?.[0]?.text || "I'm here for you. Could you share more?";
-          res.json({ reply });
-        } catch {
-          res.status(500).json({ error: "Failed to parse AI response." });
-        }
-      });
+  try {
+    const parsed = JSON.parse(data);
+    console.log("Anthropic response:", JSON.stringify(parsed).slice(0, 300));
+    if (parsed.error) {
+      console.error("Anthropic API error:", parsed.error);
+      return res.status(500).json({ error: parsed.error.message || "AI error." });
+    }
+    const reply = parsed.content?.[0]?.text || "I'm here for you. Could you share more?";
+    res.json({ reply });
+  } catch (e) {
+    console.error("Parse error:", e.message, "Raw:", data.slice(0, 200));
+    res.status(500).json({ error: "Failed to parse AI response." });
+  }
+});
     });
 
     apiReq.on("error", () => res.status(500).json({ error: "AI service unavailable." }));
