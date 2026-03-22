@@ -1,0 +1,10 @@
+const express = require("express");
+const { getPosts, createPost, toggleLike, addReply } = require("../controllers/forumController");
+const { protect } = require("../middleware/auth");
+const router = express.Router();
+router.use(protect);
+router.get("/", getPosts);
+router.post("/", createPost);
+router.post("/:id/like", toggleLike);
+router.post("/:id/reply", addReply);
+module.exports = router;

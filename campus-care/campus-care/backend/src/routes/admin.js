@@ -1,0 +1,10 @@
+const express = require("express");
+const { getStats, getAllPosts, removePost, updateBookingStatus } = require("../controllers/adminController");
+const { protect, restrictTo } = require("../middleware/auth");
+const router = express.Router();
+router.use(protect, restrictTo("admin"));
+router.get("/stats", getStats);
+router.get("/posts", getAllPosts);
+router.patch("/posts/:id/remove", removePost);
+router.patch("/bookings/:id/status", updateBookingStatus);
+module.exports = router;
