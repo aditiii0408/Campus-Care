@@ -7,6 +7,7 @@ import PeerForum from "../components/modules/PeerForum";
 import Resources from "../components/modules/Resources";
 import ScreeningTools from "../components/modules/ScreeningTools";
 import FloatingChatbot from "../components/FloatingChatbot";
+import ChangePassword from "../components/modules/ChangePassword";
 
 const TABS = [
   { id: "home",      label: "Dashboard",    icon: "🏠" },
@@ -15,6 +16,7 @@ const TABS = [
   { id: "booking",   label: "Book Session", icon: "📅" },
   { id: "forum",     label: "Peer Forum",   icon: "💬" },
   { id: "resources", label: "Resources",    icon: "📚" },
+  { id: "settings",  label: "Settings",     icon: "⚙️" },
 ];
 
 const MOOD_EMOJI  = { Happy: "😊", Neutral: "😐", Sad: "😔", Anxious: "😰", Stressed: "😤" };
@@ -209,6 +211,7 @@ export default function StudentDashboard() {
         {tab === "booking"   && <CounsellingBooking />}
         {tab === "forum"     && <PeerForum />}
         {tab === "resources" && <Resources />}
+        {tab === "settings"  && <ChangePassword />}
       </div>
 
       <FloatingChatbot open={chatOpen} setOpen={setChatOpen} />
