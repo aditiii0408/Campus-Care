@@ -19,6 +19,10 @@ const manageUsersRoutes  = require("./routes/manageUsers");
 const app = express();
 
 app.use(helmet());
+
+app.set("trust proxy", 1);  // ← add this line
+
+
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:3000",
   credentials: true,

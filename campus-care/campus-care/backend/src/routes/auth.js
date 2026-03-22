@@ -1,6 +1,10 @@
 const express = require("express");
 const { body } = require("express-validator");
-const { register, login, getMe, createAdminUser } = require("../controllers/authController");
+const {
+  register, login, getMe,
+  changePassword, forgotPassword, resetPassword,
+  createAdminUser
+} = require("../controllers/authController");
 const { protect, restrictTo } = require("../middleware/auth");
 
 const router = express.Router();
@@ -17,6 +21,10 @@ router.post("/login", [
 ], login);
 
 router.get("/me", protect, getMe);
+
+router.post("/change-password", protect, changePassword);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 // Only existing admins can create new admin accounts
 router.post("/create-admin", protect, restrictTo("admin"), createAdminUser);
