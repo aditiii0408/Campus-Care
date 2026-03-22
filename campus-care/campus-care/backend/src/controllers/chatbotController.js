@@ -22,7 +22,7 @@ exports.chat = async (req, res) => {
       return res.status(400).json({ error: "messages array required." });
     }
 
-    // Check latest user message for trigger words
+    // Crisis detection
     const lastUserMsg = [...messages].reverse().find(m => m.role === "user");
     if (lastUserMsg) {
       const found = detectTriggers(lastUserMsg.content);
@@ -34,60 +34,81 @@ exports.chat = async (req, res) => {
           rollNumber: req.user.rollNumber || "",
           triggerMessage: lastUserMsg.content,
           triggerWords: found,
-          severity: found.some(w => ["suicide", "suicidal", "kill myself", "end my life", "want to die", "hang myself", "overdose"].includes(w)) ? "critical" : "high",
+          severity: found.some(w =>
+            ["suicide","suicidal","kill myself","end my life","want to die","hang myself","overdose"].includes(w)
+          ) ? "critical" : "high",
         });
-        console.log(`CRISIS ALERT — Student: ${req.user.name} (${req.user.email})`);
       }
     }
 
-    const payload = JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: `You are CareBot, a compassionate mental health support assistant for college students at Campus Care.
-Provide empathetic, supportive first-aid emotional guidance in 2-4 concise sentences.
+    // Build Gemini conversation
+    const systemPrompt = `You are CareBot, a compassionate mental health support assistant for college students at Campus Care. 
+Provide empathetic, supportive emotional guidance in 2-4 concise sentences.
 You are NOT a therapist. Always suggest professional counselling for serious concerns. Never diagnose.
 Focus on coping strategies, validation, and encouragement.
-IMPORTANT: If a student expresses thoughts of suicide, self-harm, or ending their life, respond with deep empathy,
-take it seriously, remind them they are not alone, and STRONGLY encourage them to immediately contact a counsellor
-or call iCall helpline at 9152987821. Always provide this number for crisis situations.`,
-      messages,
+If a student expresses thoughts of suicide or self-harm, respond with deep empathy, remind them they are not alone, 
+and STRONGLY encourage them to contact a counsellor or call iCall helpline at 9152987821.`;
+
+    // Convert messages to Gemini format
+    const geminiMessages = messages.map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }],
+    }));
+
+    // Add system prompt as first user message if not present
+    const contents = [
+      { role: "user", parts: [{ text: systemPrompt }] },
+      { role: "model", parts: [{ text: "Understood. I'm CareBot, here to support students. How can I help?" }] },
+      ...geminiMessages,
+    ];
+
+    const payload = JSON.stringify({
+      contents,
+      generationConfig: {
+        maxOutputTokens: 300,
+        temperature: 0.7,
+      },
     });
 
+    const apiKey = process.env.GEMINI_API_KEY;
     const options = {
-      hostname: "api.anthropic.com",
-      path: "/v1/messages",
+      hostname: "generativelanguage.googleapis.com",
+      path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
         "Content-Length": Buffer.byteLength(payload),
       },
     };
 
     const apiReq = https.request(options, (apiRes) => {
       let data = "";
-      apiRes.on("data", (chunk) => (data += chunk));
+      apiRes.on("data", chunk => data += chunk);
       apiRes.on("end", () => {
-  try {
-    const parsed = JSON.parse(data);
-    console.log("Anthropic response:", JSON.stringify(parsed).slice(0, 300));
-    if (parsed.error) {
-      console.error("Anthropic API error:", parsed.error);
-      return res.status(500).json({ error: parsed.error.message || "AI error." });
-    }
-    const reply = parsed.content?.[0]?.text || "I'm here for you. Could you share more?";
-    res.json({ reply });
-  } catch (e) {
-    console.error("Parse error:", e.message, "Raw:", data.slice(0, 200));
-    res.status(500).json({ error: "Failed to parse AI response." });
-  }
-});
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) {
+            console.error("Gemini error:", parsed.error);
+            return res.status(500).json({ error: "AI service error." });
+          }
+          const reply = parsed.candidates?.[0]?.content?.parts?.[0]?.text
+            || "I'm here for you. Would you like to share more about how you're feeling?";
+          res.json({ reply });
+        } catch (e) {
+          console.error("Parse error:", e.message);
+          res.status(500).json({ error: "Failed to parse AI response." });
+        }
+      });
     });
 
-    apiReq.on("error", () => res.status(500).json({ error: "AI service unavailable." }));
+    apiReq.on("error", (e) => {
+      console.error("Gemini request error:", e.message);
+      res.status(500).json({ error: "AI service unavailable." });
+    });
+
     apiReq.write(payload);
     apiReq.end();
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
