@@ -2,10 +2,10 @@ const https = require("https");
 const Alert = require("../models/Alert");
 
 const TRIGGER_WORDS = [
-  "suicide", "suicidal", "kill myself", "end my life", "want to die",
-  "don't want to live", "dont want to live", "no reason to live",
+  "suicide", "suicidal", "kill", "end my life", "die",
+  "don't want to live","murder", "no reason to live",
   "better off dead", "end it all", "hurt myself", "self harm", "selfharm",
-  "cut myself", "overdose", "jump off", "hang myself", "ending my life",
+  "cut myself", "overdose", "jump off", "hang", "ending my life",
   "take my life", "worthless", "can't go on", "cant go on", "give up on life",
   "life is not worth", "nobody cares if i die", "disappear forever",
 ];
