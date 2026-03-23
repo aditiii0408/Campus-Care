@@ -35,7 +35,7 @@ exports.chat = async (req, res) => {
           triggerMessage: lastUserMsg.content,
           triggerWords: found,
           severity: found.some(w =>
-            ["suicide","suicidal","kill myself","end my life","want to die","hang myself","overdose"].includes(w)
+            ["suicide","suicidal","kill","end my life","die","hang","overdose", "murder" ].includes(w)
           ) ? "critical" : "high",
         });
       }
